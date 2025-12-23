@@ -15,6 +15,10 @@ const renderAgentList = () => {
             DOM.agentPanel.classList.remove('show');
             DOM.currentAgentTag.textContent = `(${agent.name})`;
             showMessageFeedback(`已切换至【${agent.name}】`);
+            
+            // 【新增】切换角色时清空对话历史（不同角色上下文无关）
+            clearChatHistory();
+            renderChatHistory(); // 清空页面消息
         });
         DOM.agentList.appendChild(agentItem);
     });

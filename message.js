@@ -10,29 +10,72 @@ const updateInputState = () => {
     DOM.sendBtn.setAttribute('aria-disabled', !value);
 };
 
-// 发送消息
+// 优化滚动函数：确保滚动到底部100%生效
+const scrollToMessageBottom = () => {
+    // 强制重绘（解决DOM渲染延迟导致的滚动失效）
+    void DOM.messageList.offsetHeight;
+    // 立即滚动
+    DOM.messageList.scrollTop = DOM.messageList.scrollHeight;
+    // 异步兜底（兼容部分浏览器渲染机制）
+    setTimeout(() => {
+        DOM.messageList.scrollTop = DOM.messageList.scrollHeight;
+    }, 0);
+};
+
+// 【新增】渲染历史消息到页面（初始化/加载历史时调用）
+const renderChatHistory = () => {
+    DOM.messageList.innerHTML = '';
+    chatHistory.forEach(msg => {
+        if (msg.role === 'user' || msg.role === 'assistant') {
+            const msgItem = document.createElement('div');
+            msgItem.className = `message-item ${msg.role === 'user' ? 'user' : ''}`;
+            const avatarText = msg.role === 'user' ? '我' : '豆';
+            msgItem.innerHTML = `<div class="message-avatar">${avatarText}</div><div class="message-content">${escapeHtml(msg.content)}</div>`;
+            DOM.messageList.appendChild(msgItem);
+        }
+    });
+    scrollToMessageBottom();
+};
+
+// 发送消息（核心修改：携带上下文）
 const sendMessage = async () => {
     const value = DOM.inputField.value.trim();
     if (!value) return;
 
-    // 添加用户消息
+    // 禁用发送按钮，防止重复发送
+    DOM.sendBtn.disabled = true;
+    DOM.sendBtn.setAttribute('aria-disabled', true);
+
+    // 1. 添加用户消息到页面
     const userMsg = document.createElement('div');
-    userMsg.className = 'message-item';
+    userMsg.className = 'message-item user';
     userMsg.innerHTML = `<div class="message-avatar">我</div><div class="message-content">${escapeHtml(value)}</div>`;
     DOM.messageList.appendChild(userMsg);
     DOM.inputField.value = '';
     updateInputState();
-    DOM.messageList.scrollTop = DOM.messageList.scrollHeight;
+    scrollToMessageBottom();
     showMessageFeedback('发送成功');
 
-    // 添加助手加载消息
+    // 2. 添加用户消息到对话历史
+    const userChatMsg = { role: 'user', content: value };
+    chatHistory.push(userChatMsg);
+    saveChatHistory(); // 保存到本地
+
+    // 3. 添加助手加载消息
+    const replyId = `assistantReply-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const assistantMsg = document.createElement('div');
     assistantMsg.className = 'message-item';
-    assistantMsg.innerHTML = `<div class="message-avatar">豆</div><div class="message-content" id="assistantReply"><div class="loading">正在思考...</div></div>`;
+    assistantMsg.innerHTML = `<div class="message-avatar">豆</div><div class="message-content" id="${replyId}"><div class="loading">正在思考...</div></div>`;
     DOM.messageList.appendChild(assistantMsg);
-    DOM.messageList.scrollTop = DOM.messageList.scrollHeight;
+    scrollToMessageBottom();
 
     try {
+        // 4. 构造API请求的messages：系统提示词 + 历史对话 + 当前消息
+        const requestMessages = [
+            { role: 'system', content: currentAgent.prompt }, // 角色设定
+            ...chatHistory // 完整的对话历史（包含本次用户消息）
+        ];
+
         const response = await fetch(`${API_CONFIG.baseUrl}/chat/completions`, {
             method: 'POST',
             headers: {
@@ -41,26 +84,45 @@ const sendMessage = async () => {
             },
             body: JSON.stringify({
                 model: API_CONFIG.chatModel,
-                messages: [
-                    { role: 'system', content: currentAgent.prompt },
-                    { role: 'user', content: value }
-                ],
-                temperature: API_CONFIG.temperature,
+                messages: requestMessages, // 核心：传上下文
+                temperature: DOM.deepThinkBtn.classList.contains('active') ? 0.2 : API_CONFIG.temperature,
                 max_tokens: API_CONFIG.max_tokens,
                 top_p: API_CONFIG.top_p,
                 presence_penalty: API_CONFIG.presence_penalty,
                 frequency_penalty: API_CONFIG.frequency_penalty
             })
         });
+
         if (!response.ok) throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
         const data = await response.json();
-        document.getElementById('assistantReply').innerHTML = escapeHtml(data.choices[0].message.content);
-        DOM.messageList.scrollTop = DOM.messageList.scrollHeight;
+        const assistantContent = data.choices[0].message.content;
+        
+        // 5. 更新页面上的助手消息
+        const replyElement = document.getElementById(replyId);
+        if (replyElement) {
+            replyElement.innerHTML = escapeHtml(assistantContent);
+        }
+
+        // 6. 添加助手消息到对话历史
+        const assistantChatMsg = { role: 'assistant', content: assistantContent };
+        chatHistory.push(assistantChatMsg);
+        saveChatHistory(); // 保存到本地
+
+        scrollToMessageBottom();
         announce('收到新回复');
     } catch (error) {
         console.error('API错误:', error);
-        document.getElementById('assistantReply').innerHTML = `<div class="error">抱歉，暂时无法回复。错误：${error.message}</div>`;
+        const replyElement = document.getElementById(replyId);
+        if (replyElement) {
+            replyElement.innerHTML = `<div class="error">抱歉，暂时无法回复。错误：${error.message}</div>`;
+        }
         showMessageFeedback('消息发送失败');
+        // 失败时移除本次用户消息（避免历史记录污染）
+        chatHistory.pop();
+        saveChatHistory();
+    } finally {
+        // 恢复发送按钮状态
+        updateInputState();
     }
 };
 
@@ -70,19 +132,29 @@ const bindFunctionBtnEvent = () => {
         btn.addEventListener('click', () => {
             DOM.functionBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            
+            // 【新增】点击清空记忆按钮时触发清空
+            if (btn.textContent.includes('清空记忆')) {
+                clearChatHistory();
+                renderChatHistory(); // 清空页面消息
+                return;
+            }
+
             if (btn === DOM.moreBtn) {
                 DOM.moreMenu.classList.toggle('show');
             } else {
                 DOM.moreMenu.classList.remove('show');
             }
-            const btnText = btn.textContent.trim().replace('更多', '');
+            const btnText = btn.textContent.trim().replace('更多', '').replace('清空记忆', '');
             announce(`已选中${btnText || '更多'}功能`);
         });
     });
 
     // 点击外部关闭更多菜单
     document.addEventListener('click', (e) => {
-        if (!DOM.moreBtn.contains(e.target)) DOM.moreMenu.classList.remove('show');
+        if (!DOM.moreBtn.contains(e.target) && !DOM.moreMenu.contains(e.target)) {
+            DOM.moreMenu.classList.remove('show');
+        }
     });
 };
 

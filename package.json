@@ -1,0 +1,18 @@
+{
+  "name": "ai-chat-assistant-electron",
+  "version": "1.0.0",
+  "description": "基于Electron的AI智能聊天助手，支持调用本地程序",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package:win": "electron-packager . AI助手 --platform=win32 --arch=x64 --out=dist --overwrite",
+    "package:mac": "electron-packager . AI助手 --platform=darwin --arch=x64 --out=dist --overwrite",
+    "package:linux": "electron-packager . AI助手 --platform=linux --arch=x64 --out=dist --overwrite"
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-packager": "^17.1.1"
+  },
+  "author": "",
+  "license": "MIT"
+}

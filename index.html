@@ -64,26 +64,27 @@
             </div>
             <div class="char-count" id="charCount">0/500</div>
         </div>
-        <div class="function-bar" role="toolbar" aria-label="快捷功能">
-            <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="帮我写作"><i class="fa-solid fa-pen-nib"></i>帮我写作</div>
-            <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="编程"><i class="fa-solid fa-code"></i>编程</div>
-            <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="图像生成"><i class="fa-solid fa-image"></i>图像生成</div>
-            <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="视频生成"><i class="fa-solid fa-video"></i>视频生成</div>
-            <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="翻译"><i class="fa-solid fa-language"></i>翻译</div>
-            <div class="function-btn ripple-container more-btn" tabindex="0" role="button" aria-label="更多功能" id="moreBtn">
-                <i class="fa-solid fa-ellipsis"></i>更多
-                <div class="more-menu" id="moreMenu">
-                    <div class="more-menu-item ripple-container"><i class="fa-solid fa-music"></i>音频生成</div>
-                    <div class="more-menu-item ripple-container"><i class="fa-solid fa-file-text"></i>文档总结</div>
-                    <div class="more-menu-item ripple-container"><i class="fa-solid fa-question-circle"></i>智能问答</div>
-                    <div class="more-menu-item ripple-container"><i class="fa-solid fa-cog"></i>设置</div>
-                </div>
-            </div>
-        </div>
+    <div class="function-bar" role="toolbar" aria-label="快捷功能">
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="帮我写作"><i class="fa-solid fa-pen-nib"></i>帮我写作</div>
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="编程"><i class="fa-solid fa-code"></i>编程</div>
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="图像生成"><i class="fa-solid fa-image"></i>图像生成</div>
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="视频生成"><i class="fa-solid fa-video"></i>视频生成</div>
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="翻译"><i class="fa-solid fa-language"></i>翻译</div>
+            <!-- 新增：清空记忆按钮 -->
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="清空记忆"><i class="fa-solid fa-trash"></i>清空记忆</div>
+        <div class="function-btn ripple-container more-btn" tabindex="0" role="button" aria-label="更多功能" id="moreBtn">
+            <i class="fa-solid fa-ellipsis"></i>更多
+            <div class="more-menu" id="moreMenu">
+               <div class="more-menu-item ripple-container"><i class="fa-solid fa-music"></i>音频生成</div>
+               <div class="more-menu-item ripple-container"><i class="fa-solid fa-file-text"></i>文档总结</div>
+               <div class="more-menu-item ripple-container"><i class="fa-solid fa-question-circle"></i>智能问答</div>
+               <div class="more-menu-item ripple-container"><i class="fa-solid fa-cog"></i>设置</div>
+           </div>
+       </div>
     </div>
 
     <div class="avatar ripple-container" tabindex="0" role="button" aria-label="打开助手个人中心"></div>
-
+    
     <!-- 引入JS模块（顺序：配置 → DOM → 工具 → 功能模块 → 入口） -->
     <script src="./js/config.js"></script>
     <script src="./js/dom.js"></script>
