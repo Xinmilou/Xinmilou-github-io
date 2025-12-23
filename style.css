@@ -1,0 +1,760 @@
+/* 性能优化：提前声明关键动画 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes widthGrow {
+    from { width: 0; }
+    to { width: 40px; }
+}
+@keyframes ripple {
+    from { transform: scale(0); opacity: 1; }
+    to { transform: scale(2); opacity: 0; }
+}
+@keyframes messageFadeIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* 核心CSS变量 - 结构化整理 */
+:root {
+    /* 基础色 */
+    --bg-primary: #f8f9fa;
+    --bg-secondary: #ffffff;
+    --bg-gradient: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-placeholder: #adb5bd;
+    --text-warning: #dc3545;
+    
+    /* 主色调 */
+    --primary-color: #4096ff;
+    --primary-light: #f0f7ff;
+    --primary-gradient: linear-gradient(90deg, #4096ff 0%, #6366f1 100%);
+    
+    /* 边框阴影 */
+    --border-color: #e9ecef;
+    --border-radius-sm: 6px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 6px 20px rgba(64, 150, 255, 0.18);
+    
+    /* 动画 */
+    --transition-base: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* 尺寸 */
+    --input-height: 56px;
+    --btn-height-sm: 32px;
+    --btn-height-md: 36px;
+    /* 新增：主内容区域高度 */
+    --main-content-height: 75vh;
+}
+
+[data-theme=dark] {
+    --bg-primary: #18181b;
+    --bg-secondary: #27272a;
+    --bg-gradient: linear-gradient(180deg, #202023 0%, #1a1a1f 100%);
+    --text-primary: #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --text-placeholder: #71717a;
+    --text-warning: #f87171;
+    
+    --primary-color: #60a5fa;
+    --primary-light: #1e3a8a;
+    --primary-gradient: linear-gradient(90deg, #60a5fa 0%, #818cf8 100%);
+    
+    --border-color: #3f3f46;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.25);
+    --shadow-lg: 0 6px 20px rgba(96, 165, 250, 0.2);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: PingFang SC, Microsoft Yahei, Helvetica Neue, sans-serif;
+    transition: var(--transition-base);
+    /* 性能优化：禁用文本选择（非输入区） */
+    user-select: none;
+}
+
+/* 恢复输入框文本选择 */
+input, textarea {
+    user-select: text;
+}
+
+body {
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    color: var(--text-primary);
+    overscroll-behavior: contain;
+    /* 性能优化：避免不必要的重绘 */
+    will-change: background-color, color;
+}
+
+/* 无障碍工具类 */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* 波纹动效容器 */
+.ripple-container {
+    position: relative;
+    overflow: hidden;
+}
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0);
+    animation: ripple 0.6s ease-out;
+    pointer-events: none;
+}
+
+/* 主题切换按钮 - 性能+交互优化 */
+.theme-toggle {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: var(--btn-height-md);
+    height: var(--btn-height-md);
+    border-radius: 50%;
+    border: none;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    touch-action: manipulation; /* 禁用移动端300ms延迟 */
+    will-change: transform, box-shadow, color;
+}
+.theme-toggle:hover {
+    color: var(--primary-color);
+    background-color: var(--primary-light);
+}
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+.theme-toggle:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Agent 选择按钮 */
+.agent-toggle {
+    left: 80px !important;
+}
+
+/* 右上角自定义栏目 - 波纹动效 */
+.custom-column {
+    align-self: flex-end;
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 6px 10px;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    border: 1px solid transparent;
+    touch-action: manipulation;
+}
+.custom-column:hover {
+    color: var(--primary-color);
+    background-color: var(--primary-light);
+    border-color: var(--primary-color);
+}
+.custom-column:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* 消息反馈区 */
+.message-feedback {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px 20px;
+    border-radius: var(--border-radius-md);
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition-slow);
+    z-index: 9999;
+}
+.message-feedback.show {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+}
+
+/* 欢迎语区域 - 视觉升级（核心修改：扩大到75%高度） */
+.welcome-wrap {
+    flex: 1;
+    display: flex;
+    /* 核心修改1：从 flex-start 改为 center，让内容垂直居中 */
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    animation: fadeIn 0.6s ease-out;
+    /* 核心修改2：min-height 改为 100vh，让容器占满整个视口高度，确保居中生效 */
+    min-height: 100vh;
+    /* 微调内边距：减少上下padding，避免内容溢出 */
+    padding: 20px 20px 20px;
+    width: 100%;
+    max-width: 55%; /* 保持之前设置的3/4宽度 */
+    min-width: 320px;
+    margin: 0 auto;
+    /* 新增：让容器内的元素均匀分布，聊天框居中，输入区在下方 */
+    justify-content: center;
+}
+
+.welcome-text {
+    font-size: 24px;
+    color: var(--text-primary);
+    margin-bottom: 40px;
+    font-weight: 500;
+    position: relative;
+    /* 文字渐变 */
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.welcome-text::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 2px;
+    background: var(--primary-gradient);
+    border-radius: 1px;
+    animation: widthGrow 0.8s ease-out;
+}
+
+/* 输入区域 - 极致性能+交互 */
+/* 如果输入区外层没有单独选择器，直接给.input-container加margin-top */
+.input-container {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--bg-secondary);
+    padding: 10px 16px;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    position: relative;
+    height: var(--input-height);
+    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    will-change: border-color, box-shadow, transform;
+    /* 新增：给输入框加少量上边距，和聊天框拉开一点距离 */
+    margin-top: 10px;
+}
+.input-container:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(64, 150, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transform: translateY(-1px);
+}
+
+/* 字数提示 */
+.char-count {
+    position: absolute;
+    bottom: -20px;
+    right: 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+.char-count.warning {
+    color: var(--text-warning);
+}
+
+.icon-btn {
+    width: var(--btn-height-md);
+    height: var(--btn-height-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 18px;
+    border: 1px solid transparent;
+    touch-action: manipulation;
+    will-change: color, background-color, transform;
+}
+/* 发送按钮置灰状态 */
+.icon-btn.send-btn:disabled {
+    color: var(--text-placeholder);
+    cursor: not-allowed;
+    background-color: transparent;
+}
+.icon-btn.send-btn:disabled:hover {
+    background-color: transparent;
+}
+.icon-btn:not(:disabled):hover {
+    color: var(--primary-color);
+    background-color: var(--primary-light);
+}
+.icon-btn:not(:disabled):active {
+    transform: scale(0.92);
+}
+.icon-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* 深度思考按钮 - 强化选中态 */
+.deep-think-btn {
+    font-size: 14px;
+    padding: 6px 12px;
+    background-color: var(--primary-light);
+    border: 1px solid var(--primary-color);
+    border-radius: var(--border-radius-md);
+    color: var(--primary-color);
+    cursor: pointer;
+    font-weight: 500;
+    touch-action: manipulation;
+}
+.deep-think-btn.active {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 2px 4px rgba(64, 150, 255, 0.2);
+}
+.deep-think-btn:not(.active):hover {
+    background-color: rgba(64, 150, 255, 0.15);
+}
+.deep-think-btn:active {
+    transform: scale(0.96);
+}
+.deep-think-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* 输入框 - 智能交互+性能 */
+.input-field {
+    flex: 1;
+    padding: 10px 0;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    color: var(--text-primary);
+    background: transparent;
+    line-height: 1.5;
+    min-width: 0;
+    /* 性能优化：减少重绘 */
+    will-change: color;
+}
+.input-field::placeholder {
+    color: var(--text-placeholder);
+    font-size: 15px;
+    transition: var(--transition-base);
+}
+.input-field:focus::placeholder {
+    opacity: 0.7;
+}
+/* 清空按钮 */
+.clear-btn {
+    display: none;
+}
+.input-has-content .clear-btn {
+    display: flex;
+}
+
+/* 功能按钮栏 - 波纹动效+选中态渐变 */
+.function-bar {
+    margin-top: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+}
+.function-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: var(--border-radius-md);
+    border: 1px solid transparent;
+    touch-action: manipulation;
+    will-change: color, background-color, transform, box-shadow;
+}
+.function-btn:hover {
+    color: var(--primary-color);
+    background-color: var(--primary-light);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+.function-btn.active {
+    background: var(--primary-gradient);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(64, 150, 255, 0.2);
+}
+.function-btn:active {
+    transform: translateY(0);
+}
+.function-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+.function-btn i {
+    font-size: 18px;
+}
+
+/* 更多功能下拉菜单 */
+.more-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    min-width: 150px;
+    padding: 8px 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(5px);
+    z-index: 999;
+    will-change: opacity, transform;
+}
+.more-menu.show {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+}
+.more-menu-item {
+    padding: 8px 16px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.more-menu-item:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+}
+
+/* 右下角头像 - 双击效果+性能 */
+.avatar {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: url('https://via.placeholder.com/52/4096ff/ffffff?text=豆') no-repeat center;
+    background-size: cover;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    border: 2px solid var(--bg-secondary);
+    -webkit-user-drag: none;
+    will-change: transform, box-shadow;
+}
+.avatar:hover {
+    transform: scale(1.08);
+    box-shadow: var(--shadow-lg);
+}
+.avatar::after {
+    content: '我的助手';
+    position: absolute;
+    right: 60px;
+    bottom: 0;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: var(--border-radius-sm);
+    font-size: 12px;
+    box-shadow: var(--shadow-sm);
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition-base);
+}
+.avatar:hover::after {
+    opacity: 1;
+    right: 68px;
+}
+
+/* 模拟消息列表（核心修改：增大高度） */
+.message-list {
+    width: 100%;
+    max-width: 100%;
+    /* 核心修改：减少底部间距，从20px改为10px，让聊天框更居中 */
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    /* 调整最大高度：适配居中布局，可根据需求微调数值 */
+    max-height: calc(40vh - 80px);
+    overflow-y: auto;
+    padding-right: 8px;
+    flex-grow: 0; /* 取消flex-grow，避免聊天框占满空间 */
+}
+.message-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    animation: messageFadeIn 0.3s ease-out;
+}
+.message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.message-content {
+    background-color: var(--bg-secondary);
+    padding: 10px 16px;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+/* ========== 新增 Agent 面板样式 ========== */
+.agent-panel {
+    position: fixed;
+    top: 80px;
+    left: 20px;
+    width: 280px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 16px;
+    z-index: 9998;
+    display: none;
+}
+.agent-panel.show {
+    display: block;
+}
+.agent-panel-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+.agent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.agent-item {
+    padding: 10px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: var(--transition-base);
+    border: 1px solid transparent;
+}
+.agent-item:hover {
+    background: var(--primary-light);
+}
+.agent-item.active {
+    border-color: var(--primary-color);
+    background: var(--primary-light);
+    color: var(--primary-color);
+}
+.agent-item .agent-name {
+    font-weight: 500;
+    font-size: 14px;
+}
+.agent-item .agent-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+.agent-custom {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.agent-custom input, .agent-custom textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+.agent-custom textarea {
+    min-height: 60px;
+    resize: none;
+}
+/* 新增：导出导入按钮样式 */
+.agent-import-export {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+.agent-ie-btn {
+    flex: 1;
+    padding: 6px 0;
+    font-size: 12px;
+    text-align: center;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--primary-color);
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.agent-ie-btn:hover {
+    background-color: var(--primary-gradient);
+    color: white;
+}
+#importFile {
+    display: none;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* 移动端适配强化 */
+@media (max-width: 768px) {
+    :root {
+        --main-content-height: 70vh; /* 移动端稍小一点 */
+    }
+    body {
+        padding: 16px;
+    }
+    .welcome-text {
+        font-size: 20px;
+        margin-bottom: 20px;
+    }
+    .welcome-wrap {
+    flex: 1;
+    display: flex;
+    /* 核心修改1：从 flex-start 改为 center，让内容垂直居中 */
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    animation: fadeIn 0.6s ease-out;
+    /* 核心修改2：min-height 改为 100vh，让容器占满整个视口高度，确保居中生效 */
+    min-height: 100vh;
+    /* 微调内边距：减少上下padding，避免内容溢出 */
+    padding: 20px 20px 20px;
+    width: 100%;
+    max-width: 75%; /* 保持之前设置的3/4宽度 */
+    min-width: 320px;
+    margin: 0 auto;
+    /* 新增：让容器内的元素均匀分布，聊天框居中，输入区在下方 */
+    justify-content: center;
+}
+    .input-container {
+        padding: 8px 12px;
+        max-width: 100%;
+        height: calc(var(--input-height) - 8px);
+    }
+    .icon-btn {
+        width: var(--btn-height-sm);
+        height: var(--btn-height-sm);
+        font-size: 16px;
+    }
+    .deep-think-btn {
+        padding: 4px 8px;
+        font-size: 13px;
+    }
+    .function-bar {
+        gap: 12px;
+        margin-top: 24px;
+    }
+    .function-btn {
+        font-size: 13px;
+        padding: 6px 12px;
+    }
+    .avatar {
+        width: 48px;
+        height: 48px;
+        bottom: 16px;
+        right: 16px;
+    }
+    .avatar::after {
+        display: none;
+    }
+    .char-count {
+        font-size: 11px;
+        bottom: -18px;
+    }
+    .message-list {
+        max-height: calc(var(--main-content-height) - 180px);
+    }
+    .agent-panel {
+        width: calc(100% - 40px);
+        left: 20px;
+    }
+}
+
+/* 小屏极致适配 */
+@media (max-width: 480px) {
+    :root {
+        --main-content-height: 65vh;
+    }
+    .function-bar {
+        gap: 8px;
+    }
+    .function-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    .icon-btn:nth-child(5), 
+    .icon-btn:nth-child(6) {
+        display: none;
+    }
+    .message-list {
+        max-height: calc(var(--main-content-height) - 160px);
+    }
+    .message-content {
+        max-width: 90%;
+    }
+}
