@@ -254,14 +254,11 @@ const APP_CN_NAME = {
 
 如果遇到问题或有功能建议，欢迎通过以下方式反馈：
 
-- Issue: [提交问题](https://github.com/你的用户名/你的仓库/issues)
+- Issue: [提交问题](https://github.com/Xinmilou/Xinmilou-github-io/issues)
 
-- 邮箱: your-email@example.com
-
-- 微信: your-wechat-id
+- 邮箱: 1514325627@qq.com
 
 ---
 
 **最后更新时间**：2025年12月23日
 **开发环境**：Node.js 18.x + Electron 28.x + Chrome 120（Electron 内置）
-> （注：文档部分内容可能由 AI 生成）
