@@ -1,0 +1,27 @@
+// 全局DOM元素缓存对象
+const DOM = {
+    html: document.documentElement,
+    themeToggle: document.querySelector('.theme-toggle'),
+    agentToggle: document.querySelector('.agent-toggle'),
+    agentPanel: document.getElementById('agentPanel'),
+    agentList: document.getElementById('agentList'),
+    customAgentName: document.getElementById('customAgentName'),
+    customAgentPrompt: document.getElementById('customAgentPrompt'),
+    saveCustomAgent: document.getElementById('saveCustomAgent'),
+    exportAgents: document.getElementById('exportAgents'),
+    importFile: document.getElementById('importFile'),
+    currentAgentTag: document.getElementById('currentAgentTag'),
+    messageFeedback: document.getElementById('messageFeedback'),
+    messageList: document.getElementById('messageList'),
+    inputField: document.getElementById('messageInput'),
+    inputContainer: document.querySelector('.input-container'),
+    clearBtn: document.querySelector('.clear-btn'),
+    sendBtn: document.querySelector('.send-btn'),
+    charCount: document.getElementById('charCount'),
+    deepThinkBtn: document.querySelector('.deep-think-btn'),
+    functionBtns: document.querySelectorAll('.function-btn'),
+    moreBtn: document.getElementById('moreBtn'),
+    moreMenu: document.getElementById('moreMenu'),
+    avatar: document.querySelector('.avatar'),
+    rippleContainers: document.querySelectorAll('.ripple-container')
+};
