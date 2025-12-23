@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能助手界面 模块化版</title>
+    <!-- 异步加载Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <!-- 引入外部CSS -->
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <!-- 主题切换按钮 -->
+    <button class="theme-toggle ripple-container" aria-label="切换深色浅色模式">
+        <i class="fa-solid fa-moon"></i>
+        <span class="sr-only">切换主题</span>
+    </button>
+
+    <!-- Agent 选择按钮 -->
+    <button class="theme-toggle ripple-container agent-toggle" aria-label="选择智能角色">
+        <i class="fa-solid fa-user-gear"></i>
+        <span class="sr-only">选择智能角色</span>
+    </button>
+
+    <!-- Agent 选择面板 -->
+    <div class="agent-panel" id="agentPanel">
+        <div class="agent-panel-title">选择智能角色</div>
+        <div class="agent-list" id="agentList"></div>
+        <div class="agent-custom">
+            <input type="text" id="customAgentName" placeholder="自定义角色名称">
+            <textarea id="customAgentPrompt" placeholder="输入角色设定提示词..."></textarea>
+            <button class="deep-think-btn ripple-container" id="saveCustomAgent">保存角色</button>
+            <div class="agent-import-export">
+                <button class="agent-ie-btn ripple-container" id="exportAgents">导出角色</button>
+                <label for="importFile" class="agent-ie-btn ripple-container">导入角色</label>
+                <input type="file" id="importFile" accept=".json">
+            </div>
+        </div>
+    </div>
+
+    <!-- 右上角自定义栏目 -->
+    <div class="custom-column ripple-container" tabindex="0" role="button" aria-label="自定义栏目">
+        自定义栏目
+    </div>
+
+    <!-- 消息反馈提示 -->
+    <div class="message-feedback" id="messageFeedback"></div>
+
+    <!-- 内容主体区 -->
+    <div class="welcome-wrap">
+        <div class="welcome-text">晚上好，树丶一 <span id="currentAgentTag">(默认助手)</span></div>
+        <div class="message-list" id="messageList"></div>
+        <div class="input-container" role="group" aria-label="输入交互区">
+            <div class="icon-btn ripple-container" tabindex="0" role="button" aria-label="编辑"><i class="fa-solid fa-pen-to-square"></i></div>
+            <button class="deep-think-btn ripple-container" aria-label="开启深度思考模式">深度思考</button>
+            <input type="text" class="input-field" placeholder="发消息或输入  选择技能" aria-label="输入消息" id="messageInput" maxlength="500">
+            <div class="icon-btn clear-btn ripple-container" tabindex="0" role="button" aria-label="清空输入框"><i class="fa-solid fa-times"></i></div>
+            <div class="icon-btn ripple-container" tabindex="0" role="button" aria-label="截图"><i class="fa-solid fa-scissors"></i></div>
+            <div class="icon-btn ripple-container" tabindex="0" role="button" aria-label="语音通话"><i class="fa-solid fa-phone"></i></div>
+            <div class="icon-btn ripple-container" tabindex="0" role="button" aria-label="语音输入"><i class="fa-solid fa-microphone"></i></div>
+            <div class="icon-btn send-btn ripple-container" tabindex="0" role="button" aria-label="发送消息" disabled>
+                <i class="fa-solid fa-paper-plane"></i>
+            </div>
+            <div class="char-count" id="charCount">0/500</div>
+        </div>
+    <div class="function-bar" role="toolbar" aria-label="快捷功能">
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="帮我写作"><i class="fa-solid fa-pen-nib"></i>帮我写作</div>
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="编程"><i class="fa-solid fa-code"></i>编程</div>
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="图像生成"><i class="fa-solid fa-image"></i>图像生成</div>
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="视频生成"><i class="fa-solid fa-video"></i>视频生成</div>
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="翻译"><i class="fa-solid fa-language"></i>翻译</div>
+            <!-- 新增：清空记忆按钮 -->
+        <div class="function-btn ripple-container" tabindex="0" role="button" aria-label="清空记忆"><i class="fa-solid fa-trash"></i>清空记忆</div>
+        <div class="function-btn ripple-container more-btn" tabindex="0" role="button" aria-label="更多功能" id="moreBtn">
+            <i class="fa-solid fa-ellipsis"></i>更多
+            <div class="more-menu" id="moreMenu">
+               <div class="more-menu-item ripple-container"><i class="fa-solid fa-music"></i>音频生成</div>
+               <div class="more-menu-item ripple-container"><i class="fa-solid fa-file-text"></i>文档总结</div>
+               <div class="more-menu-item ripple-container"><i class="fa-solid fa-question-circle"></i>智能问答</div>
+               <div class="more-menu-item ripple-container"><i class="fa-solid fa-cog"></i>设置</div>
+           </div>
+       </div>
+    </div>
+
+    <div class="avatar ripple-container" tabindex="0" role="button" aria-label="打开助手个人中心"></div>
+    
+    <!-- 引入JS模块（顺序：配置 → DOM → 工具 → 功能模块 → 入口） -->
+    <script src="./js/config.js"></script>
+    <script src="./js/dom.js"></script>
+    <script src="./js/utils.js"></script>
+    <script src="./js/theme.js"></script>
+    <script src="./js/agent.js"></script>
+    <script src="./js/message.js"></script>
+    <script src="./js/main.js"></script>
+</body>
+</html>
