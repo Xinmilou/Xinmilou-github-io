@@ -262,4 +262,3 @@ const APP_CN_NAME = {
 
 **最后更新时间**：2025年12月23日
 **开发环境**：Node.js 18.x + Electron 28.x + Chrome 120（Electron 内置）
-> （注：文档部分内容可能由 AI 生成）
