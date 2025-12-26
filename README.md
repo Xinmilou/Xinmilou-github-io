@@ -1,5 +1,7 @@
 # 智能助手 Electron 应用 README
 
+![界面预览](https://via.placeholder.com/1200x600/4f9eff/ffffff?text=智能助手+应用+界面)
+
 一款基于 Electron 开发的跨平台智能助手应用，融合 AI 聊天交互、本地程序快捷调用、聊天记录持久化等核心功能，兼具美观的 UI 设计与流畅的交互体验，支持深浅色主题切换，适配 PC/移动端。
 
 ## 🚀 功能特性
@@ -260,3 +262,4 @@ const APP_CN_NAME = {
 
 **最后更新时间**：2025年12月23日
 **开发环境**：Node.js 18.x + Electron 28.x + Chrome 120（Electron 内置）
+> （注：文档部分内容可能由 AI 生成）
